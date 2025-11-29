@@ -6,6 +6,7 @@ import ChatWidget from '@/components/ChatWidget';
 import { motion } from 'framer-motion';
 import { FileText, TrendingUp, Shield, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { API_BASE_URL } from '@/lib/api';
 
 interface Document {
     id: string;
@@ -36,8 +37,8 @@ export default function DashboardPage() {
         const fetchData = async () => {
             try {
                 const [statsRes, docsRes] = await Promise.all([
-                    fetch('http://localhost:8002/api/documents/stats'),
-                    fetch('http://localhost:8002/api/documents')
+                    fetch(`${API_BASE_URL}/api/documents/stats`),
+                    fetch(`${API_BASE_URL}/api/documents`)
                 ]);
 
                 if (statsRes.ok) {

@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import ChatWidget from '@/components/ChatWidget';
 import { motion } from 'framer-motion';
 import { FileText, TrendingUp, DollarSign, AlertTriangle } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api';
 
 interface Document {
     id: string;
@@ -23,7 +24,7 @@ export default function AnalyticsPage() {
     useEffect(() => {
         const fetchDocuments = async () => {
             try {
-                const response = await fetch('http://localhost:8002/api/documents');
+                const response = await fetch(`${API_BASE_URL}/api/documents`);
                 if (response.ok) {
                     const data = await response.json();
                     setDocuments(data);

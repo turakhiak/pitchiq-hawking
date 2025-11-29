@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Send, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
+import { API_BASE_URL } from '@/lib/api';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -27,7 +28,7 @@ export default function ChatWidget({ documentId }: { documentId?: string }) {
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8002/api/chat', {
+            const response = await fetch(`${API_BASE_URL}/api/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

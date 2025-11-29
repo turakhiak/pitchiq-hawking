@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { Building2, TrendingUp, DollarSign, AlertTriangle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
+import { API_BASE_URL } from '@/lib/api';
 
 // Import new structured view components
 import CompanyView from '@/components/analysis/CompanyView';
@@ -31,7 +32,7 @@ export default function AnalysisPage() {
     const loadAnalysis = async (type: string) => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:8002/api/analyze', {
+            const response = await fetch(`${API_BASE_URL}/api/analyze`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
