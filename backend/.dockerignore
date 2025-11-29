@@ -1,0 +1,44 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.db
+*.sqlite3
+
+# ChromaDB
+chroma_db/
+
+# Test files
+test_*.py
+test_*.pdf
+research_output.md
+
+# Development files
+.env
+.venv
+venv/
+env/
+
+# Industry knowledge (we'll exclude for now to reduce size)
+industry_knowledge/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+README.md
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Large model downloads
+models/
+.cache/

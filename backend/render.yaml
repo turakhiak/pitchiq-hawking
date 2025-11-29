@@ -1,0 +1,18 @@
+# Render Deployment Configuration
+# This file is automatically detected by Render
+
+# Build command
+buildCommand = "pip install -r requirements.txt"
+
+# Start command
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+
+# Service type
+type = "web"
+
+# Health check path
+healthCheckPath = "/"
+
+# Environment
+[env]
+PYTHON_VERSION = "3.11"

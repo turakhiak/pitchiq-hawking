@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+google-generativeai==0.8.3
+python-pptx
+python-docx
+python-dotenv
