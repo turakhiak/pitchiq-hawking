@@ -14,7 +14,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://*.vercel.app",  # Allow all Vercel preview deployments
-        "https://pitchiq-hawking.vercel.app"  # Production domain - FIXED!
+        "https://pitchiq-hawking.vercel.app",
+        "https://pitchiq-sepia.vercel.app"  # Correct Production domain
     ],
     allow_credentials=True,
     allow_methods=["*"],
