@@ -44,7 +44,7 @@ export default function MarketView({ data }: { data: MarketData }) {
                         <TrendingUp className="w-6 h-6 text-[var(--accent-primary)]" />
                         <h2 className="text-2xl font-bold">Market Size</h2>
                     </div>
-                    <div className="h-[300px] w-full">
+                    <div className="w-full" style={{ height: 300 }}>
                         <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                             <PieChart>
                                 <Pie

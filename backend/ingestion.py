@@ -14,6 +14,19 @@ load_dotenv()
 
 router = APIRouter()
 
+@router.get("/health")
+async def health_check():
+    """Debug endpoint to check backend status and environment"""
+    import os
+    chroma_path = os.getenv("CHROMA_DB_PATH") or ("/mnt/data/chroma_db" if os.path.exists("/mnt/data") else "./chroma_db")
+    exists = os.path.exists(chroma_path)
+    return {
+        "status": "ok",
+        "chroma_path": chroma_path,
+        "chroma_exists": exists,
+        "contents": os.listdir(chroma_path) if exists else []
+    }
+
 # Configure Gemini
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel('gemini-flash-latest')
