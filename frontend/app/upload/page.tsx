@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import ChatWidget from '@/components/ChatWidget';
 import { motion } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import { Upload as UploadIcon, FileText, Sparkles, ArrowRight } from 'lucide-react';
@@ -203,6 +204,8 @@ export default function UploadPage() {
                     </button>
                 </motion.div>
             </main>
+
+            <ChatWidget />
         </div>
     );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Send, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
@@ -13,11 +13,28 @@ interface Message {
 
 export default function ChatWidget({ documentId }: { documentId?: string }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [documentName, setDocumentName] = useState<string>('');
+
+    // Set initial message based on document context
+    const getInitialMessage = () => {
+        if (documentId && documentId !== 'demo') {
+            return `Hi! I'm your PitchIQ AI assistant. Ask me anything about ${documentName || documentId}.`;
+        }
+        return 'Hi! I\'m your PitchIQ AI assistant. Upload and analyze a pitch deck to chat about it.';
+    };
+
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'assistant', content: 'Hi! I\'m your PitchIQ AI assistant. Ask me anything about the uploaded pitchbook.' }
+        { role: 'assistant', content: getInitialMessage() }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Update document name when documentId changes
+    useEffect(() => {
+        if (documentId && documentId !== 'demo') {
+            setDocumentName(documentId.replace(/_/g, ' '));
+        }
+    }, [documentId]);
 
     const sendMessage = async () => {
         if (!input.trim()) return;
@@ -40,6 +57,8 @@ export default function ChatWidget({ documentId }: { documentId?: string }) {
             if (response.ok) {
                 const data = await response.json();
                 setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+            } else {
+                setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, the backend is having trouble. Please try again.' }]);
             }
         } catch (error) {
             setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
@@ -78,19 +97,18 @@ export default function ChatWidget({ documentId }: { documentId?: string }) {
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between p-4 border-b border-white/10">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] rounded-full flex items-center justify-center">
-                                    <Sparkles className="w-5 h-5 text-white" />
-                                </div>
-                                <div>
+                            <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                    <Sparkles className="w-5 h-5 text-[var(--accent-primary)]" />
                                     <h3 className="font-semibold">PitchIQ Assistant</h3>
-                                    <p className="text-xs text-[var(--text-secondary)]">Always here to help</p>
                                 </div>
+                                {documentId && documentId !== 'demo' && documentName && (
+                                    <span className="text-xs text-[var(--text-secondary)] ml-7">
+                                        📄 {documentName}
+                                    </span>
+                                )}
                             </div>
-                            <button
-                                onClick={() => setIsOpen(false)}
-                                className="p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors"
-                            >
+                            <button onClick={() => setIsOpen(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
