@@ -20,8 +20,11 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel('gemini-flash-latest')
 
 # Vector DB
-# Use persistent disk if available (production on Render), fallback to local (development)
-VECTOR_DB_DIR = "/mnt/data/chroma_db" if os.path.exists("/mnt/data") else "./chroma_db"
+# Use persistent storage: env var > /mnt/data > local fallback
+VECTOR_DB_DIR = os.getenv("CHROMA_DB_PATH") or ("/mnt/data/chroma_db" if os.path.exists("/mnt/data") else "./chroma_db")
+
+# Ensure directory exists
+os.makedirs(VECTOR_DB_DIR, exist_ok=True)
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 router = APIRouter()

@@ -45,7 +45,7 @@ export default function MarketView({ data }: { data: MarketData }) {
                         <h2 className="text-2xl font-bold">Market Size</h2>
                     </div>
                     <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                             <PieChart>
                                 <Pie
                                     data={chartData}
