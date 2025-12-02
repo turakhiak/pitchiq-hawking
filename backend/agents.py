@@ -85,6 +85,7 @@ VECTOR_DB_DIR = os.getenv("CHROMA_DB_PATH") or ("/mnt/data/chroma_db" if os.path
 
 # Ensure directory exists
 os.makedirs(VECTOR_DB_DIR, exist_ok=True)
+print(f"DEBUG: Using Vector DB Directory: {VECTOR_DB_DIR}")
 
 class AnalysisRequest(BaseModel):
     document_id: str
@@ -473,5 +474,8 @@ async def analyze_document(request: AnalysisRequest):
             return {"analysis": {"error": "Failed to parse structured data", "raw_text": result_text}, "document_id": request.document_id, "type": request.analysis_type}
 
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
         print(f"Error in analysis: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Traceback: {error_trace}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}. Trace: {error_trace}")

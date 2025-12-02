@@ -138,4 +138,8 @@ async def ingest_document(
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error in ingestion: {e}")
+        print(f"Traceback: {error_trace}")
+        raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}. Trace: {error_trace}")
