@@ -80,7 +80,8 @@ model = genai.GenerativeModel('gemini-flash-latest')
 
 # Use open-source embeddings for ChromaDB
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-VECTOR_DB_DIR = "./chroma_db"
+# Use persistent disk if available (production on Render), fallback to local (development)
+VECTOR_DB_DIR = "/mnt/data/chroma_db" if os.path.exists("/mnt/data") else "./chroma_db"
 
 class AnalysisRequest(BaseModel):
     document_id: str

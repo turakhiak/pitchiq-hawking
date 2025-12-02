@@ -12,7 +12,8 @@ load_dotenv()
 
 # Constants
 INDUSTRY_KNOWLEDGE_DIR = "./industry_knowledge"
-VECTOR_DB_DIR = "./chroma_db"
+# Use persistent disk if available (production on Render), fallback to local (development)
+VECTOR_DB_DIR = "/mnt/data/chroma_db" if os.path.exists("/mnt/data") else "./chroma_db"
 
 # Initialize embeddings
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
