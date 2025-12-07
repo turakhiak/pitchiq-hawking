@@ -466,12 +466,25 @@ async def analyze_document(request: AnalysisRequest):
         result_text = response.text
         
         # Parse JSON to ensure it's valid before returning
+        # Parse JSON to ensure it's valid before returning
         try:
-            result_json = json.loads(result_text)
+            # Clean up potential markdown code blocks
+            cleaned_text = result_text.replace("```json", "").replace("```", "").strip()
+            result_json = json.loads(cleaned_text)
             return {"analysis": result_json, "document_id": request.document_id, "type": request.analysis_type}
         except json.JSONDecodeError:
-            # Fallback if JSON is malformed (rare with generation_config)
-            return {"analysis": {"error": "Failed to parse structured data", "raw_text": result_text}, "document_id": request.document_id, "type": request.analysis_type}
+            print(f"JSON Decode Error. Raw text: {result_text}")
+            # Fallback: Return raw text wrapped in a basic structure
+            return {
+                "analysis": {
+                    "error": "Failed to parse structured data", 
+                    "raw_text": result_text,
+                    "reasoning": "AI response was not valid JSON. Showing raw output.",
+                    "citations": []
+                }, 
+                "document_id": request.document_id, 
+                "type": request.analysis_type
+            }
 
     except Exception as e:
         import traceback

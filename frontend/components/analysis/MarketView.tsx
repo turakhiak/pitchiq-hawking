@@ -44,26 +44,28 @@ export default function MarketView({ data }: { data: MarketData }) {
                         <TrendingUp className="w-6 h-6 text-[var(--accent-primary)]" />
                         <h2 className="text-2xl font-bold">Market Size</h2>
                     </div>
-                    <div className="w-full" style={{ height: 300 }}>
-                        <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-                            <PieChart>
-                                <Pie
-                                    data={chartData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }} />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
+                    <div className="relative w-full h-[300px]" style={{ minHeight: '300px' }}>
+                        <div className="absolute inset-0">
+                            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+                                <PieChart>
+                                    <Pie
+                                        data={chartData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {chartData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }} />
+                                    <Legend />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
                     <div className="grid grid-cols-3 gap-4 mt-6 text-center">
                         <div>
