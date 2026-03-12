@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List
 import google.generativeai as genai
 from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from shared_utils import get_embeddings
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,8 +16,7 @@ router = APIRouter()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel('gemini-flash-latest')
 
-# Embeddings for ChromaDB
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+# Embeddings for ChromaDB (lazy loaded)
 # Use persistent storage: env var > /mnt/data > local fallback
 VECTOR_DB_DIR = os.getenv("CHROMA_DB_PATH") or ("/mnt/data/chroma_db" if os.path.exists("/mnt/data") else "./chroma_db")
 
@@ -85,7 +84,7 @@ async def chat_with_document(request: ChatRequest):
             raise HTTPException(status_code=400, detail=f"Security check failed: {reason}")
         
         # 2. Retrieve context from ChromaDB
-        vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=embeddings)
+        vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=get_embeddings())
         
         # Search for relevant context
         results = vectordb.similarity_search(

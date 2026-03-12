@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from shared_utils import get_embeddings
 from dotenv import load_dotenv
 import datetime
 
@@ -12,8 +12,7 @@ load_dotenv()
 
 router = APIRouter()
 
-# Use open-source embeddings
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+# Use open-source embeddings (lazy loaded)
 # Use persistent storage: env var > /mnt/data > local fallback
 VECTOR_DB_DIR = os.getenv("CHROMA_DB_PATH") or ("/mnt/data/chroma_db" if os.path.exists("/mnt/data") else "./chroma_db")
 
@@ -37,7 +36,7 @@ class DashboardStats(BaseModel):
 @router.get("/documents", response_model=List[Document])
 async def get_documents():
     try:
-        vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=embeddings)
+        vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=get_embeddings())
         # ChromaDB doesn't have a simple "list all documents" method that returns unique metadata.
         # We have to fetch all data and deduplicate. This is inefficient for large datasets
         # but acceptable for this prototype.

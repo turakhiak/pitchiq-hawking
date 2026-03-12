@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 import google.generativeai as genai
 from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from shared_utils import get_embeddings
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,7 +21,7 @@ def get_industry_benchmarks(industry: str, analysis_type: str = None) -> str:
     try:
         knowledge_db = Chroma(
             persist_directory=VECTOR_DB_DIR,
-            embedding_function=embeddings,
+            embedding_function=get_embeddings(),
             collection_name="industry_knowledge"
         )
         
@@ -58,7 +58,7 @@ def get_competitive_research(document_id: str) -> Optional[str]:
     Retrieve competitive research if available for this document.
     """
     try:
-        vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=embeddings)
+        vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=get_embeddings())
         
         results = vectordb.similarity_search(
             query="competitive intelligence research",
@@ -78,8 +78,7 @@ def get_competitive_research(document_id: str) -> Optional[str]:
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel('gemini-flash-latest')
 
-# Use open-source embeddings for ChromaDB
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+# Use open-source embeddings for ChromaDB (lazy loaded)
 # Use persistent storage: env var > /mnt/data > local fallback
 VECTOR_DB_DIR = os.getenv("CHROMA_DB_PATH") or ("/mnt/data/chroma_db" if os.path.exists("/mnt/data") else "./chroma_db")
 
@@ -140,7 +139,7 @@ class RiskAnalysis(BaseModel):
 async def analyze_document(request: AnalysisRequest):
     try:
         # 1. Retrieve relevant chunks from ChromaDB
-        vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=embeddings)
+        vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=get_embeddings())
         
         # Search for documents matching the document_id
         results = vectordb.similarity_search(

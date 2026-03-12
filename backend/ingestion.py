@@ -6,8 +6,8 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
 import google.generativeai as genai
 from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.documents import Document
+from shared_utils import get_embeddings
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -31,8 +31,7 @@ async def health_check():
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel('gemini-flash-latest')
 
-# Configure Vector Store (using same embeddings as agents.py)
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+# Lazy load embeddings during endpoint calls
 # Use persistent storage: env var > /mnt/data > local fallback
 VECTOR_DB_DIR = os.getenv("CHROMA_DB_PATH") or ("/mnt/data/chroma_db" if os.path.exists("/mnt/data") else "./chroma_db")
 
@@ -133,7 +132,7 @@ async def ingest_document(
         print(f"DEBUG: Step 4 - Storing {len(documents)} chunks in ChromaDB")
         vectordb = Chroma.from_documents(
             documents=documents, 
-            embedding=embeddings,
+            embedding=get_embeddings(),
             persist_directory=VECTOR_DB_DIR
         )
         # vectordb.persist() # Chroma 0.4+ persists automatically
