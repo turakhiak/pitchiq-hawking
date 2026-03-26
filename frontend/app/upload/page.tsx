@@ -6,7 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import ChatWidget from '@/components/ChatWidget';
 import { motion } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
-import { Upload as UploadIcon, FileText, Sparkles, ArrowRight } from 'lucide-react';
+import { Upload as UploadIcon, FileText, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { API_BASE_URL } from '@/lib/api';
@@ -18,6 +18,7 @@ export default function UploadPage() {
     const [geography, setGeography] = useState('');
     const [dealType, setDealType] = useState('');
     const [uploading, setUploading] = useState(false);
+    const [processingStep, setProcessingStep] = useState('');
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         if (acceptedFiles.length > 0) {
@@ -39,6 +40,8 @@ export default function UploadPage() {
         }
 
         setUploading(true);
+        setProcessingStep('Uploading file...');
+
         const formData = new FormData();
         formData.append('file', file);
         formData.append('industry', industry);
@@ -46,22 +49,62 @@ export default function UploadPage() {
         if (dealType) formData.append('deal_type', dealType);
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/ingest`, {
+            // Step 1: Submit job — returns immediately with a job_id
+            const submitRes = await fetch(`${API_BASE_URL}/api/ingest`, {
                 method: 'POST',
                 body: formData,
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                toast.success('Document uploaded successfully!');
-                router.push(`/analysis/${data.filename}`);
-            } else {
-                toast.error('Upload failed');
+            if (!submitRes.ok) {
+                const err = await submitRes.json().catch(() => ({}));
+                throw new Error(err.detail || 'Upload failed');
             }
-        } catch (error) {
-            toast.error('Connection error');
+
+            const { job_id, status: initialStatus } = await submitRes.json();
+
+            if (!job_id) {
+                // Legacy response (no job_id) — old synchronous path
+                toast.success('Document uploaded successfully!');
+                setUploading(false);
+                return;
+            }
+
+            setProcessingStep('Processing...');
+
+            // Step 2: Poll for job completion
+            let filename = file.name;
+            const pollInterval = 3000; // 3 seconds
+            const maxPolls = 100;      // up to ~5 minutes
+
+            for (let i = 0; i < maxPolls; i++) {
+                await new Promise((r) => setTimeout(r, pollInterval));
+
+                const statusRes = await fetch(`${API_BASE_URL}/api/ingest/status/${job_id}`);
+                if (!statusRes.ok) {
+                    throw new Error('Could not check processing status');
+                }
+
+                const jobData = await statusRes.json();
+                if (jobData.step) setProcessingStep(jobData.step);
+
+                if (jobData.status === 'done') {
+                    filename = jobData.result?.filename ?? file.name;
+                    toast.success('Document analysed successfully!');
+                    router.push(`/analysis/${encodeURIComponent(filename)}`);
+                    return;
+                }
+
+                if (jobData.status === 'error') {
+                    throw new Error(jobData.error || 'Processing failed');
+                }
+            }
+
+            throw new Error('Processing timed out — please try again.');
+        } catch (error: any) {
+            toast.error(error.message || 'Connection error');
         } finally {
             setUploading(false);
+            setProcessingStep('');
         }
     };
 
@@ -198,9 +241,18 @@ export default function UploadPage() {
                         disabled={!file || !industry || !geography || uploading}
                         className="btn-gradient w-full py-4 rounded-xl flex items-center justify-center gap-3 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <Sparkles className="w-6 h-6" />
-                        {uploading ? 'Analyzing...' : 'Analyze Document'}
-                        <ArrowRight className="w-6 h-6" />
+                        {uploading ? (
+                            <>
+                                <Loader2 className="w-6 h-6 animate-spin" />
+                                {processingStep || 'Processing...'}
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles className="w-6 h-6" />
+                                Analyze Document
+                                <ArrowRight className="w-6 h-6" />
+                            </>
+                        )}
                     </button>
                 </motion.div>
             </main>
