@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import google.generativeai as genai
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from shared_utils import get_embeddings
 from dotenv import load_dotenv
 
@@ -76,7 +76,7 @@ def get_competitive_research(document_id: str) -> Optional[str]:
 
 # Configure Gemini
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel('gemini-flash-latest')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Use open-source embeddings for ChromaDB (lazy loaded)
 # Use persistent storage: env var > /mnt/data > local fallback

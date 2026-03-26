@@ -8,16 +8,16 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import google.generativeai as genai
-from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
 import os
 from dotenv import load_dotenv
+from shared_utils import get_embeddings
 
 load_dotenv()
 
 # Configure Gemini
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel('gemini-flash-latest')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Vector DB
 # Use persistent storage: env var > /mnt/data > local fallback
@@ -25,7 +25,6 @@ VECTOR_DB_DIR = os.getenv("CHROMA_DB_PATH") or ("/mnt/data/chroma_db" if os.path
 
 # Ensure directory exists
 os.makedirs(VECTOR_DB_DIR, exist_ok=True)
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 router = APIRouter()
 
@@ -39,7 +38,7 @@ def get_industry_benchmarks(industry: str, query: str = None) -> str:
         # Access industry knowledge collection
         knowledge_db = Chroma(
             persist_directory=VECTOR_DB_DIR,
-            embedding_function=embeddings,
+            embedding_function=get_embeddings(),
             collection_name="industry_knowledge"
         )
         
@@ -73,7 +72,7 @@ def get_competitive_research(document_id: str) -> Optional[str]:
     """
     try:
         # Access main ChromaDB for research reports
-        vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=embeddings)
+        vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=get_embeddings())
         
         # Search for research reports
         results = vectordb.similarity_search(

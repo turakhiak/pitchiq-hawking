@@ -8,7 +8,7 @@ from typing import Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
 
 import google.generativeai as genai
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from shared_utils import get_embeddings
 from dotenv import load_dotenv
@@ -19,7 +19,7 @@ router = APIRouter()
 
 # Configure Gemini
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Persistent storage path
 VECTOR_DB_DIR = os.getenv("CHROMA_DB_PATH") or (

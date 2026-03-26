@@ -3,7 +3,7 @@
 
 import os
 import google.generativeai as genai
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import Optional
 import json
 
@@ -38,7 +38,7 @@ async def upload_pdf(
         document_id = uploaded_file.name.split('/')[-1]
         
         # Extract text using Gemini
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         response = model.generate_content([
             uploaded_file,
             "Extract all text content from this pitch deck document. Preserve structure and formatting."
@@ -60,7 +60,7 @@ async def upload_pdf(
         }
         
     except Exception as e:
-        return {"error": str(e)}, 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/documents")
 async def get_documents():

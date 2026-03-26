@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List
 import google.generativeai as genai
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from shared_utils import get_embeddings
 from dotenv import load_dotenv
 
@@ -14,14 +14,11 @@ router = APIRouter()
 
 # Configure Gemini
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel('gemini-flash-latest')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Embeddings for ChromaDB (lazy loaded)
 # Use persistent storage: env var > /mnt/data > local fallback
 VECTOR_DB_DIR = os.getenv("CHROMA_DB_PATH") or ("/mnt/data/chroma_db" if os.path.exists("/mnt/data") else "./chroma_db")
-
-# Ensure directory exists
-os.makedirs(VECTOR_DB_DIR, exist_ok=True)
 
 # Ensure directory exists
 os.makedirs(VECTOR_DB_DIR, exist_ok=True)
