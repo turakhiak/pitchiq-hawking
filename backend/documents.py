@@ -3,7 +3,7 @@ import os
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from shared_utils import get_embeddings
 from dotenv import load_dotenv
 import datetime

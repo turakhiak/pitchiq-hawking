@@ -12,5 +12,4 @@ google-generativeai
 python-pptx
 python-docx
 python-dotenv
-sentence-transformers
-langchain-huggingface
+langchain-google-genai
