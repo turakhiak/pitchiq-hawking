@@ -48,6 +48,7 @@ export default function DashboardPage() {
 
                 if (docsRes.ok) {
                     const docsData = await docsRes.json();
+                    console.log('API Documents:', docsData); // Debug log for Vercel console
                     setRecentDocs(docsData);
                 }
             } catch (error) {
@@ -120,8 +121,8 @@ export default function DashboardPage() {
                         {loading ? (
                             <div className="text-center py-8 text-[var(--text-secondary)]">Loading...</div>
                         ) : recentDocs.length > 0 ? (
-                            recentDocs.map((doc) => (
-                                <Link href={`/analysis/${doc.id}`} key={doc.id}>
+                            recentDocs.map((doc, index) => (
+                                <Link href={`/analysis/${doc.id || encodeURIComponent(doc.name)}`} key={doc.id || index}>
                                     <div className="flex items-center justify-between p-4 bg-[var(--bg-tertiary)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors cursor-pointer mb-3">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] rounded-lg flex items-center justify-center">

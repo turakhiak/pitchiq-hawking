@@ -27,6 +27,7 @@ export default function AnalyticsPage() {
                 const response = await fetch(`${API_BASE_URL}/api/documents`);
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('API Documents:', data); // Debug log for Vercel console
                     setDocuments(data);
                 }
             } catch (error) {
@@ -70,11 +71,11 @@ export default function AnalyticsPage() {
                         <div className="space-y-4">
                             {documents.map((doc, index) => (
                                 <motion.div
-                                    key={doc.id}
+                                    key={doc.id || index}
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: index * 0.1 }}
-                                    onClick={() => router.push(`/analysis/${doc.id}`)}
+                                    onClick={() => router.push(`/analysis/${doc.id || encodeURIComponent(doc.name)}`)}
                                     className="flex items-center justify-between p-4 bg-[var(--bg-tertiary)] rounded-lg hover:bg-[var(--bg-secondary)] transition-colors cursor-pointer"
                                 >
                                     <div className="flex items-center gap-4">
