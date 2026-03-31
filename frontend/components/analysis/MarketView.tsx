@@ -4,6 +4,7 @@ import { TrendingUp, Users, Quote } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface MarketData {
+    reasoning?: string;
     tam: string;
     sam: string;
     som: string;
@@ -33,6 +34,25 @@ export default function MarketView({ data }: { data: MarketData }) {
 
     return (
         <div className="space-y-6">
+            {/* AI Insights Card */}
+            {data.reasoning && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-start gap-3"
+                >
+                    <div className="mt-1 bg-purple-500 rounded-full p-1">
+                        <TrendingUp className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-1">Market Analyst Perspective</p>
+                        <p className="text-sm text-[var(--text-secondary)] italic leading-relaxed">
+                            "{data.reasoning}"
+                        </p>
+                    </div>
+                </motion.div>
+            )}
+            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Market Size Chart */}
                 <motion.div

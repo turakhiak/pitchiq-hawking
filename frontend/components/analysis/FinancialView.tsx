@@ -4,6 +4,7 @@ import { DollarSign, TrendingUp, AlertCircle, Quote } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 interface FinancialData {
+    reasoning?: string;
     revenue_data: Array<{ year: string; value: number; is_projected: boolean }>;
     ebitda_margins?: string;
     valuation: string;
@@ -20,6 +21,25 @@ export default function FinancialView({ data }: { data: FinancialData }) {
 
     return (
         <div className="space-y-6">
+            {/* AI Insights Card */}
+            {data.reasoning && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl flex items-start gap-3"
+                >
+                    <div className="mt-1 bg-green-500 rounded-full p-1">
+                        <TrendingUp className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-green-400 uppercase tracking-wider mb-1">Quantitative Analyst Perspective</p>
+                        <p className="text-sm text-[var(--text-secondary)] italic leading-relaxed">
+                            "{data.reasoning}"
+                        </p>
+                    </div>
+                </motion.div>
+            )}
+            
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Key Metrics Cards */}
                 <motion.div

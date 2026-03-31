@@ -101,26 +101,81 @@ async def analyze_document(request: AnalysisRequest):
         generation_config = {"response_mime_type": "application/json"}
         
         # Determine prompt based on type
+        system_instruction = """
+        You are 'PitchIQ', an elite Investment Analyst at a Tier-1 Venture Capital and Private Equity firm. 
+        Your task is to analyze documents with extreme precision, identifying deep insights that a junior analyst might miss.
+        
+        GUIDELINES:
+        1. Always start your response by populating the 'reasoning' field with your step-by-step logical approach.
+        2. Be concise but data-driven. Use specific numbers, dates, and names found in the document.
+        3. If data is missing, don't hallucinate. Instead, use the 'reasoning' field to explain it's missing and provide a conservative estimate in the result fields while citing it as an AI-based estimate.
+        4. Focus on 'Quality over Quantity' for lists like products and management.
+        5. Citations must include EXACT quotes and explain WHY that quote supports the data point.
+        """
+
         if request.analysis_type == "company":
             schema = CompanyAnalysis
             prompt = f"""
-            Analyze this company's overview, management, and products based on this context: {context}
+            {system_instruction}
             
-            CRITICAL: 
-            - 'products' MUST be a JSON LIST of objects: [{{ "name": "...", "description": "..." }}]
-            - 'key_management' MUST be a JSON LIST: [{{ "name": "...", "role": "...", "bio": "..." }}]
+            TASK: Analyze the COMPANY OVERVIEW, MANAGEMENT TEAM, and PRODUCT PORTFOLIO.
+            CONTEXT: {context}
             
-            Return JSON matching the schema.
+            SPECIFIC INSTRUCTIONS:
+            - 'overview': Summarize the core mission and value proposition.
+            - 'key_management': Extract names, roles, and 2-sentence bios highlighting relevant experience.
+            - 'products': Group into logical product lines. Describe what they solve.
+            - 'business_model': How do they make money? (B2B SaaS, Marketplace, etc.)
+            
+            Return ONLY valid JSON matching the CompanyAnalysis schema.
             """
         elif request.analysis_type == "market":
             schema = MarketAnalysis
-            prompt = f"Analyze market size (TAM/SAM/SOM), CAGR, and competitors based on this context: {context}\nReturn JSON matching schema."
+            prompt = f"""
+            {system_instruction}
+            
+            TASK: Analyze MARKET SIZE (TAM/SAM/SOM), GROWTH (CAGR), and COMPETITION.
+            CONTEXT: {context}
+            
+            SPECIFIC INSTRUCTIONS:
+            - 'tam', 'sam', 'som': Extract specific dollar amounts. If unavailable, provide a calculated estimate based on the industry context.
+            - 'cagr': Find the industry growth rate.
+            - 'competitors': Identify 3-5 key competitors. List their relative strengths and weaknesses compared to this company.
+            - 'market_drivers': List macro/micro trends driving demand.
+            
+            Return ONLY valid JSON matching the MarketAnalysis schema.
+            """
         elif request.analysis_type == "financial":
             schema = FinancialAnalysis
-            prompt = f"Extract revenue data, margins, valuation, and metrics based on this context: {context}\nReturn JSON matching schema."
+            prompt = f"""
+            {system_instruction}
+            
+            TASK: Extract FINANCIAL PERFORMANCE, METRICS, and VALUATION.
+            CONTEXT: {context}
+            
+            SPECIFIC INSTRUCTIONS:
+            - 'revenue_data': Extract yearly or quarterly revenue. Mark projected years as 'is_projected': true.
+            - 'valuation': Find the post-money or pre-money valuation referenced. 
+            - 'key_metrics': Extract metrics like LTV/CAC, ARR, Gross Margin, or burn rate.
+            - 'verification_notes': Add a paragraph explaining the reliability of this financial data (e.g., 'Audited', 'Management Estimates', 'Fragmentary').
+            
+            Return ONLY valid JSON matching the FinancialAnalysis schema.
+            """
         elif request.analysis_type == "risk":
             schema = RiskAnalysis
-            prompt = f"Identify key risks (Market, Tech, Financial) and mitigants based on this context: {context}\nReturn JSON matching schema."
+            prompt = f"""
+            {system_instruction}
+            
+            TASK: Identify KEY RISKS and potential MITIGANTS.
+            CONTEXT: {context}
+            
+            SPECIFIC INSTRUCTIONS:
+            - Categorize risks into: Market Risk, Operational Risk, Financial Risk, or Regulatory Risk.
+            - For each risk, provide a plausible 'mitigant' (how the company manages this risk).
+            - 'overall_risk_score': Return 'Low', 'Medium', 'High', or 'Critical'.
+            
+            Return ONLY valid JSON matching the RiskAnalysis schema.
+            """
         else:
             raise HTTPException(status_code=400, detail="Invalid analysis type")
 

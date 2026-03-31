@@ -1,8 +1,9 @@
 
 import { motion } from 'framer-motion';
-import { Building2, Users, Package, Target, Quote } from 'lucide-react';
+import { Building2, Users, Package, Target, Quote, TrendingUp } from 'lucide-react';
 
 interface CompanyData {
+    reasoning?: string;
     overview: string;
     founding_year: string;
     headquarters: string;
@@ -18,6 +19,25 @@ export default function CompanyView({ data }: { data: CompanyData }) {
 
     return (
         <div className="space-y-6">
+            {/* AI Insights Card */}
+            {data.reasoning && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-start gap-3"
+                >
+                    <div className="mt-1 bg-blue-500 rounded-full p-1">
+                        <TrendingUp className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">AI Analyst Perspective</p>
+                        <p className="text-sm text-[var(--text-secondary)] italic leading-relaxed">
+                            "{data.reasoning}"
+                        </p>
+                    </div>
+                </motion.div>
+            )}
+            
             {/* Overview Card */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}

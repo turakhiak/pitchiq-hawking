@@ -1,8 +1,9 @@
 
 import { motion } from 'framer-motion';
-import { AlertTriangle, ShieldCheck, Quote } from 'lucide-react';
+import { AlertTriangle, ShieldCheck, Quote, TrendingUp } from 'lucide-react';
 
 interface RiskData {
+    reasoning?: string;
     risks: Array<{ category: string; description: string; severity: string; mitigant: string }>;
     overall_risk_score: string;
     citations: Array<{ text: string; explanation: string }>;
@@ -20,6 +21,25 @@ export default function RiskView({ data }: { data: RiskData }) {
 
     return (
         <div className="space-y-6">
+            {/* AI Insights Card */}
+            {data.reasoning && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-start gap-3"
+                >
+                    <div className="mt-1 bg-orange-500 rounded-full p-1">
+                        <TrendingUp className="w-3 h-3 text-white" />
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-orange-400 uppercase tracking-wider mb-1">Risk Analyst Perspective</p>
+                        <p className="text-sm text-[var(--text-secondary)] italic leading-relaxed">
+                            "{data.reasoning}"
+                        </p>
+                    </div>
+                </motion.div>
+            )}
+            
             {/* Overall Score */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
