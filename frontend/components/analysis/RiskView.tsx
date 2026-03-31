@@ -30,8 +30,8 @@ export default function RiskView({ data }: { data: RiskData }) {
                     <h2 className="text-2xl font-bold mb-1">Risk Assessment</h2>
                     <p className="text-[var(--text-secondary)]">AI-evaluated risk profile</p>
                 </div>
-                <div className={`px-6 py-3 rounded-lg border ${getSeverityColor(data.overall_risk_score)}`}>
-                    <span className="font-bold text-xl">{data.overall_risk_score} Risk</span>
+                <div className={`px-6 py-3 rounded-lg border ${getSeverityColor(String(data.overall_risk_score))}`}>
+                    <span className="font-bold text-xl">{String(data.overall_risk_score)} Risk</span>
                 </div>
             </motion.div>
 
@@ -54,13 +54,17 @@ export default function RiskView({ data }: { data: RiskData }) {
                                 {risk.severity}
                             </span>
                         </div>
-                        <p className="text-[var(--text-secondary)] mb-4">{risk.description}</p>
+                        <p className="text-[var(--text-secondary)] mb-4">
+                            {typeof risk.description === 'object' ? JSON.stringify(risk.description) : String(risk.description)}
+                        </p>
 
                         <div className="flex items-start gap-2 p-3 bg-[var(--bg-tertiary)] rounded-lg">
                             <ShieldCheck className="w-5 h-5 text-green-400 mt-0.5" />
                             <div>
                                 <span className="text-xs font-bold text-green-400 uppercase tracking-wider">Mitigant</span>
-                                <p className="text-sm mt-1">{risk.mitigant}</p>
+                                <p className="text-sm mt-1">
+                                    {typeof risk.mitigant === 'object' ? JSON.stringify(risk.mitigant) : String(risk.mitigant)}
+                                </p>
                             </div>
                         </div>
                     </motion.div>

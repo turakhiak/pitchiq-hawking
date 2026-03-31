@@ -68,15 +68,21 @@ export default function MarketView({ data }: { data: MarketData }) {
                     <div className="grid grid-cols-3 gap-4 mt-6 text-center">
                         <div>
                             <p className="text-sm text-[var(--text-secondary)]">TAM</p>
-                            <p className="font-bold text-lg">{data.tam}</p>
+                            <p className="font-bold text-lg">
+                                {typeof data.tam === 'object' ? JSON.stringify(data.tam) : String(data.tam)}
+                            </p>
                         </div>
                         <div>
                             <p className="text-sm text-[var(--text-secondary)]">SAM</p>
-                            <p className="font-bold text-lg">{data.sam}</p>
+                            <p className="font-bold text-lg">
+                                {typeof data.sam === 'object' ? JSON.stringify(data.sam) : String(data.sam)}
+                            </p>
                         </div>
                         <div>
                             <p className="text-sm text-[var(--text-secondary)]">SOM</p>
-                            <p className="font-bold text-lg">{data.som}</p>
+                            <p className="font-bold text-lg">
+                                {typeof data.som === 'object' ? JSON.stringify(data.som) : String(data.som)}
+                            </p>
                         </div>
                     </div>
                 </motion.div>
@@ -97,7 +103,9 @@ export default function MarketView({ data }: { data: MarketData }) {
                     </div>
                     <div className="mt-6">
                         <h3 className="font-semibold mb-2">CAGR</h3>
-                        <div className="text-4xl font-bold text-green-400">{data.cagr}</div>
+                        <div className="text-4xl font-bold text-green-400">
+                            {typeof data.cagr === 'object' ? JSON.stringify(data.cagr) : String(data.cagr)}
+                        </div>
                     </div>
                 </motion.div>
             </div>

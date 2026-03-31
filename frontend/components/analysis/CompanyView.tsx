@@ -28,15 +28,21 @@ export default function CompanyView({ data }: { data: CompanyData }) {
                     <Building2 className="w-6 h-6 text-[var(--accent-primary)]" />
                     <h2 className="text-2xl font-bold">Company Overview</h2>
                 </div>
-                <p className="text-[var(--text-secondary)] mb-4">{data.overview}</p>
+                <p className="text-[var(--text-secondary)] mb-4">
+                    {typeof data.overview === 'object' ? JSON.stringify(data.overview) : String(data.overview)}
+                </p>
                 <div className="flex gap-6 text-sm">
                     <div className="flex flex-col">
                         <span className="text-[var(--text-tertiary)]">Founded</span>
-                        <span className="font-semibold">{data.founding_year || 'N/A'}</span>
+                        <span className="font-semibold">
+                            {typeof data.founding_year === 'object' ? JSON.stringify(data.founding_year) : String(data.founding_year || 'N/A')}
+                        </span>
                     </div>
                     <div className="flex flex-col">
                         <span className="text-[var(--text-tertiary)]">Headquarters</span>
-                        <span className="font-semibold">{data.headquarters || 'N/A'}</span>
+                        <span className="font-semibold">
+                            {typeof data.headquarters === 'object' ? JSON.stringify(data.headquarters) : String(data.headquarters || 'N/A')}
+                        </span>
                     </div>
                 </div>
             </motion.div>
@@ -118,7 +124,9 @@ export default function CompanyView({ data }: { data: CompanyData }) {
                         <Target className="w-6 h-6 text-green-400" />
                         <h2 className="text-xl font-bold">Business Model</h2>
                     </div>
-                    <p className="text-[var(--text-secondary)]">{data.business_model}</p>
+                    <p className="text-[var(--text-secondary)]">
+                        {typeof data.business_model === 'object' ? JSON.stringify(data.business_model) : String(data.business_model)}
+                    </p>
                 </motion.div>
             </div>
 

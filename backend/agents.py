@@ -15,7 +15,7 @@ router = APIRouter()
 
 # Persistent storage path
 VECTOR_DB_DIR = os.getenv("CHROMA_DB_PATH") or (
-    "/mnt/data" if os.path.exists("/mnt/data") else "./chroma_db"
+    "/mnt/data/chroma_db" if os.path.exists("/mnt/data") else "./chroma_db"
 )
 
 # Configure Gemini

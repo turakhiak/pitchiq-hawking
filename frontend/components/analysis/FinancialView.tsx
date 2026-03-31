@@ -31,25 +31,33 @@ export default function FinancialView({ data }: { data: FinancialData }) {
                     <div className="space-y-4">
                         <div className="p-4 bg-[var(--bg-tertiary)] rounded-lg">
                             <p className="text-sm text-[var(--text-secondary)]">Valuation</p>
-                            <p className="text-2xl font-bold text-green-400">{data.valuation}</p>
+                            <p className="text-2xl font-bold text-green-400">
+                                {typeof data.valuation === 'object' ? JSON.stringify(data.valuation) : String(data.valuation)}
+                            </p>
                         </div>
                         {data.ebitda_margins && (
                             <div className="p-4 bg-[var(--bg-tertiary)] rounded-lg">
                                 <p className="text-sm text-[var(--text-secondary)]">EBITDA Margins</p>
-                                <p className="text-2xl font-bold text-blue-400">{data.ebitda_margins}</p>
+                                <p className="text-2xl font-bold text-blue-400">
+                                    {typeof data.ebitda_margins === 'object' ? JSON.stringify(data.ebitda_margins) : String(data.ebitda_margins)}
+                                </p>
                             </div>
                         )}
                         {/* VC Specific Metrics */}
                         {data.monthly_burn_rate && (
                             <div className="p-4 bg-[var(--bg-tertiary)] rounded-lg border border-red-500/20">
                                 <p className="text-sm text-[var(--text-secondary)]">Monthly Burn</p>
-                                <p className="text-2xl font-bold text-red-400">{data.monthly_burn_rate}</p>
+                                <p className="text-2xl font-bold text-red-400">
+                                    {typeof data.monthly_burn_rate === 'object' ? JSON.stringify(data.monthly_burn_rate) : String(data.monthly_burn_rate)}
+                                </p>
                             </div>
                         )}
                         {data.runway_months && (
                             <div className="p-4 bg-[var(--bg-tertiary)] rounded-lg border border-yellow-500/20">
                                 <p className="text-sm text-[var(--text-secondary)]">Runway</p>
-                                <p className="text-2xl font-bold text-yellow-400">{data.runway_months}</p>
+                                <p className="text-2xl font-bold text-yellow-400">
+                                    {typeof data.runway_months === 'object' ? JSON.stringify(data.runway_months) : String(data.runway_months)}
+                                </p>
                             </div>
                         )}
 
@@ -103,12 +111,12 @@ export default function FinancialView({ data }: { data: FinancialData }) {
                         <h2 className="text-xl font-bold">Unit Economics</h2>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {data.unit_economics.map((item, idx) => (
+                        {Array.isArray(data.unit_economics) ? data.unit_economics.map((item, idx) => (
                             <div key={idx} className="p-4 bg-[var(--bg-tertiary)] rounded-lg text-center">
                                 <p className="text-sm text-[var(--text-secondary)] mb-1">{item.metric}</p>
                                 <p className="text-xl font-bold text-white">{item.value}</p>
                             </div>
-                        ))}
+                        )) : <p className="text-sm text-[var(--text-secondary)] col-span-4">{JSON.stringify(data.unit_economics)}</p>}
                     </div>
                 </motion.div>
             )}
