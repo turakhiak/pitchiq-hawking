@@ -186,17 +186,22 @@ async def analyze_document(request: AnalysisRequest):
                  raise Exception("No AI candidates returned")
                 
             json_text = response.text
-            # Cleanup Markdown
+            # Final cleanup of markdown if any remains
             if "```json" in json_text:
                 json_text = json_text.split("```json")[1].split("```")[0].strip()
             elif "```" in json_text:
                 json_text = json_text.split("```")[1].split("```")[0].strip()
             
-            data = json.loads(json_text)
-            return {"analysis": data}
+            # Use Pydantic to validate and enforce the schema
+            raw_data = json.loads(json_text)
+            validated_data = schema.model_validate(raw_data)
+            
+            return {"analysis": validated_data.model_dump()}
         except Exception as e:
             print(f"AI ERROR: {e}")
-            raise HTTPException(status_code=500, detail=f"AI failure: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
+            raise HTTPException(status_code=500, detail=f"AI Data Validation Failure: {str(e)}")
 
     except HTTPException as he:
         raise he
