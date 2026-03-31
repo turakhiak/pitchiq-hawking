@@ -15,6 +15,7 @@ app.add_middleware(
         "http://localhost:3000",
         "https://pitchiq-hawking.vercel.app",
         "https://pitchiq-sepia.vercel.app",
+        "https://pitchiq-kappa.vercel.app",
     ],
     allow_origin_regex=r"https://.*\.vercel\.app",  # Covers all Vercel preview deployments
     allow_credentials=True,
