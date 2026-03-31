@@ -53,13 +53,13 @@ export default function CompanyView({ data }: { data: CompanyData }) {
                     <h2 className="text-2xl font-bold">Key Management</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {data.key_management?.map((person, idx) => (
+                    {Array.isArray(data.key_management) ? data.key_management.map((person, idx) => (
                         <div key={idx} className="p-4 bg-[var(--bg-tertiary)] rounded-lg">
                             <h3 className="font-bold text-lg">{person.name}</h3>
                             <p className="text-[var(--accent-primary)] text-sm mb-2">{person.role}</p>
                             <p className="text-sm text-[var(--text-secondary)]">{person.bio}</p>
                         </div>
-                    ))}
+                    )) : <p className="text-sm text-[var(--text-secondary)] col-span-2">{String(data.key_management)}</p>}
                 </div>
             </motion.div>
 
@@ -99,12 +99,12 @@ export default function CompanyView({ data }: { data: CompanyData }) {
                         <h2 className="text-xl font-bold">Products</h2>
                     </div>
                     <ul className="space-y-3">
-                        {data.products?.map((prod, idx) => (
+                        {Array.isArray(data.products) ? data.products.map((prod, idx) => (
                             <li key={idx} className="border-b border-[var(--border-color)] pb-2 last:border-0">
                                 <span className="font-semibold block">{prod.name}</span>
-                                <span className="text-sm text-[var(--text-secondary)]">{prod.description}</span>
+                                <span className="text-sm text-[var(--text-secondary)]">{prod.description || ''}</span>
                             </li>
-                        ))}
+                        )) : <p className="text-sm text-[var(--text-secondary)]">{String(data.products)}</p>}
                     </ul>
                 </motion.div>
 

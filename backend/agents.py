@@ -103,7 +103,15 @@ async def analyze_document(request: AnalysisRequest):
         # Determine prompt based on type
         if request.analysis_type == "company":
             schema = CompanyAnalysis
-            prompt = f"Analyze this company's overview, management, and products based on this context: {context}\nReturn JSON matching schema."
+            prompt = f"""
+            Analyze this company's overview, management, and products based on this context: {context}
+            
+            CRITICAL: 
+            - 'products' MUST be a JSON LIST of objects: [{{ "name": "...", "description": "..." }}]
+            - 'key_management' MUST be a JSON LIST: [{{ "name": "...", "role": "...", "bio": "..." }}]
+            
+            Return JSON matching the schema.
+            """
         elif request.analysis_type == "market":
             schema = MarketAnalysis
             prompt = f"Analyze market size (TAM/SAM/SOM), CAGR, and competitors based on this context: {context}\nReturn JSON matching schema."
