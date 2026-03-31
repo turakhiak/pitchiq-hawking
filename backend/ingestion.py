@@ -19,7 +19,7 @@ router = APIRouter()
 
 # Configure Gemini
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel('gemini-2.0-flash')
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 # Persistent storage path
 VECTOR_DB_DIR = os.getenv("CHROMA_DB_PATH") or (

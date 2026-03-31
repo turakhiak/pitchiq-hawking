@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight } from 'lucide-react';
@@ -12,6 +12,19 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [particles, setParticles] = useState<{left: string, top: string, duration: number, delay: number}[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+    const newParticles = [...Array(20)].map(() => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      duration: 3 + Math.random() * 2,
+      delay: Math.random() * 2,
+    }));
+    setParticles(newParticles);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,22 +58,22 @@ export default function LoginPage() {
       {/* Animated Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-primary)] via-[var(--bg-secondary)] to-[var(--bg-primary)]" suppressHydrationWarning>
         {/* Floating Particles */}
-        {[...Array(20)].map((_, i) => (
+        {mounted && particles.map((p, i) => (
           <motion.div
             key={i}
             className="absolute w-2 h-2 bg-[var(--accent-primary)] rounded-full opacity-20"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: p.left,
+              top: p.top,
             }}
             animate={{
               y: [0, -30, 0],
               opacity: [0.2, 0.5, 0.2],
             }}
             transition={{
-              duration: 3 + Math.random() * 2,
+              duration: p.duration,
               repeat: Infinity,
-              delay: Math.random() * 2,
+              delay: p.delay,
             }}
           />
         ))}
@@ -89,7 +102,7 @@ export default function LoginPage() {
           <div className="flex flex-col gap-4 text-[var(--text-secondary)]">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 bg-[var(--accent-primary)] rounded-full" />
-              <span>Multimodal document analysis with Gemini 1.5 Pro</span>
+              <span>Multimodal document analysis with Gemini 2.5 Flash</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 bg-[var(--accent-secondary)] rounded-full" />

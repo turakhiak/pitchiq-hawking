@@ -1,5 +1,6 @@
 import os
 import json
+from urllib.parse import unquote
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional
@@ -76,7 +77,7 @@ def get_competitive_research(document_id: str) -> Optional[str]:
 
 # Configure Gemini
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel('gemini-2.0-flash')
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 # Use open-source embeddings for ChromaDB (lazy loaded)
 # Use persistent storage: env var > /mnt/data > local fallback
@@ -139,20 +140,27 @@ class RiskAnalysis(BaseModel):
 async def analyze_document(request: AnalysisRequest):
     try:
         # 1. Retrieve relevant chunks from ChromaDB
+        # URL-decode the document_id in case it arrived percent-encoded
+        document_id = unquote(request.document_id)
+
         vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=get_embeddings())
-        
+
         # Search for documents matching the document_id
-        results = vectordb.similarity_search(
-            query=f"Information about {request.analysis_type}",
-            k=10, # Increased context for better extraction
-            filter={"source": request.document_id}
-        )
-        
+        try:
+            results = vectordb.similarity_search(
+                query=f"Information about {request.analysis_type}",
+                k=10,
+                filter={"source": document_id}
+            )
+        except Exception as chroma_err:
+            print(f"ChromaDB query error: {chroma_err}")
+            results = []
+
         # Combine retrieved context
         context = "\n\n".join([doc.page_content for doc in results])
-        
+
         if not context:
-            return {"analysis": None, "error": "No documents found", "document_id": request.document_id, "type": request.analysis_type}
+            raise HTTPException(status_code=404, detail=f"No document found with id '{document_id}'. Make sure the file was fully processed before opening analysis.")
             
         # Extract metadata
         deal_type = results[0].metadata.get("deal_type", "M&A")
@@ -470,7 +478,7 @@ async def analyze_document(request: AnalysisRequest):
             # Clean up potential markdown code blocks
             cleaned_text = result_text.replace("```json", "").replace("```", "").strip()
             result_json = json.loads(cleaned_text)
-            return {"analysis": result_json, "document_id": request.document_id, "type": request.analysis_type}
+            return {"analysis": result_json, "document_id": document_id, "type": request.analysis_type}
         except json.JSONDecodeError:
             print(f"JSON Decode Error. Raw text: {result_text}")
             # Fallback: Return raw text wrapped in a basic structure

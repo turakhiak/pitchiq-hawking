@@ -14,7 +14,7 @@ router = APIRouter()
 
 # Configure Gemini
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel('gemini-2.0-flash')
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 # Embeddings for ChromaDB (lazy loaded)
 # Use persistent storage: env var > /mnt/data > local fallback

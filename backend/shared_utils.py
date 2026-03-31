@@ -7,7 +7,7 @@ def get_embeddings():
     global _embeddings
     if _embeddings is None:
         _embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001",
+            model="models/gemini-embedding-001",
             google_api_key=os.getenv("GOOGLE_API_KEY"),
         )
     return _embeddings

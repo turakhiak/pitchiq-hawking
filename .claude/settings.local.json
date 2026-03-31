@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find . -type d -not -path */node_modules* -not -path */.next*)",
+      "Bash(python -c \"import sys; print\\(sys.version\\)\")",
+      "Bash(pip show:*)",
+      "Bash(python -c \"import main\")",
+      "Bash(pip install:*)",
+      "Bash(python -c \":*)",
+      "Bash(python -c \"import main; print\\(''All imports OK''\\)\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(grep -r \"ingest\\\\|upload\" /c/Users/turak/.gemini/antigravity/playground/sparse-hawking/frontend/src --include=*.ts --include=*.tsx --include=*.js -l)",
+      "Bash(find /c/Users/turak/.gemini/antigravity/playground/sparse-hawking/frontend -name *.ts -o -name *.tsx -o -name *.js)",
+      "Bash(xargs grep:*)",
+      "Bash(find /c/Users/turak/.gemini/antigravity/playground/sparse-hawking/frontend/src -name *.ts -o -name *.tsx)",
+      "Bash(xargs ls:*)",
+      "Bash(python -c \"import main; print\\(''''OK''''\\)\")",
+      "Bash(python -c \"import main; print\\(''OK''\\)\")"
+    ]
+  }
+}

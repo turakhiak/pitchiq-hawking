@@ -46,7 +46,8 @@ export default function AnalysisPage() {
                 // Data is now structured JSON, not a string
                 setAnalysis((prev: any) => ({ ...prev, [type]: data.analysis }));
             } else {
-                toast.error('Failed to fetch analysis');
+                const errData = await response.json().catch(() => ({}));
+                toast.error(errData.detail || 'Failed to fetch analysis');
             }
         } catch (error) {
             console.error(error);
