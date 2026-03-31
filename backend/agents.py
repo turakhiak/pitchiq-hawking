@@ -9,8 +9,7 @@ from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from urllib.parse import unquote
 from shared_utils import get_embeddings
-from industry_knowledge.saas_tech.benchmarks import get_industry_benchmarks
-from research_agent import get_competitive_research
+from agents_intelligence import get_industry_benchmarks, get_competitive_research
 
 router = APIRouter()
 
