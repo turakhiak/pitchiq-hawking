@@ -32,42 +32,42 @@ class Citation(BaseModel):
 
 class CompanyAnalysis(BaseModel):
     reasoning: str
-    overview: str
-    founding_year: Optional[str]
-    headquarters: Optional[str]
-    key_management: List[dict]
-    founders_background: Optional[List[dict]]
-    products: List[dict]
-    business_model: str
-    citations: List[Citation]
+    overview: str = "No overview available."
+    founding_year: Optional[str] = "N/A"
+    headquarters: Optional[str] = "N/A"
+    key_management: List[dict] = []
+    founders_background: Optional[List[dict]] = []
+    products: List[dict] = []
+    business_model: str = "TBD"
+    citations: List[Citation] = []
 
 class MarketAnalysis(BaseModel):
     reasoning: str
-    tam: str
-    sam: str
-    som: str
-    cagr: str
-    competitors: List[dict]
-    market_drivers: List[str]
-    citations: List[Citation]
+    tam: Optional[str] = "N/A"
+    sam: Optional[str] = "N/A"
+    som: Optional[str] = "N/A"
+    cagr: Optional[str] = "N/A"
+    competitors: List[dict] = []
+    market_drivers: List[str] = []
+    citations: List[Citation] = []
 
 class FinancialAnalysis(BaseModel):
     reasoning: str
-    revenue_data: List[dict]
-    ebitda_margins: Optional[str]
-    valuation: str
-    monthly_burn_rate: Optional[str]
-    runway_months: Optional[str]
-    unit_economics: Optional[List[dict]]
-    key_metrics: List[dict]
-    verification_notes: str
-    citations: List[Citation]
+    revenue_data: List[dict] = []
+    ebitda_margins: Optional[str] = "N/A"
+    valuation: Optional[str] = "N/A"
+    monthly_burn_rate: Optional[str] = "N/A"
+    runway_months: Optional[str] = "N/A"
+    unit_economics: Optional[List[dict]] = []
+    key_metrics: List[dict] = []
+    verification_notes: str = "Verification in progress."
+    citations: List[Citation] = []
 
 class RiskAnalysis(BaseModel):
     reasoning: str
-    risks: List[dict]
-    overall_risk_score: str
-    citations: List[Citation]
+    risks: List[dict] = []
+    overall_risk_score: str = "Medium"
+    citations: List[Citation] = []
 
 @router.post("/analyze")
 async def analyze_document(request: AnalysisRequest):
@@ -194,6 +194,18 @@ async def analyze_document(request: AnalysisRequest):
             
             # Use Pydantic to validate and enforce the schema
             raw_data = json.loads(json_text)
+            
+            # Handle cases where AI might wrap the response in an "analysis" or "data" key
+            if isinstance(raw_data, dict):
+                if "analysis" in raw_data:
+                    raw_data = raw_data["analysis"]
+                elif "data" in raw_data:
+                    raw_data = raw_data["data"]
+            
+            # If AI completely missed the reasoning field, provide a fallback
+            if isinstance(raw_data, dict) and "reasoning" not in raw_data:
+                raw_data["reasoning"] = "Step-by-step logic missing from AI response."
+                
             validated_data = schema.model_validate(raw_data)
             
             return {"analysis": validated_data.model_dump()}
