@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import ChatWidget from '@/components/ChatWidget';
 import { motion } from 'framer-motion';
-import { Building2, TrendingUp, DollarSign, AlertTriangle, Download } from 'lucide-react';
+import { Building2, TrendingUp, DollarSign, AlertTriangle, Download, RefreshCcw, Database, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { API_BASE_URL } from '@/lib/api';
@@ -28,8 +28,9 @@ export default function AnalysisPage() {
     const [activeTab, setActiveTab] = useState('company');
     const [analysis, setAnalysis] = useState<any>({});
     const [loading, setLoading] = useState(false);
+    const [isCached, setIsCached] = useState<any>({});
 
-    const loadAnalysis = async (type: string) => {
+    const loadAnalysis = async (type: string, force = false) => {
         setLoading(true);
         try {
             const response = await fetch(`${API_BASE_URL}/api/analyze`, {
@@ -38,13 +39,15 @@ export default function AnalysisPage() {
                 body: JSON.stringify({
                     document_id: params.id,
                     analysis_type: type,
+                    force_rerun: force
                 }),
             });
 
             if (response.ok) {
                 const data = await response.json();
-                // Data is now structured JSON, not a string
                 setAnalysis((prev: any) => ({ ...prev, [type]: data.analysis }));
+                setIsCached((prev: any) => ({ ...prev, [type]: !!data.cached }));
+                if (force) toast.success('Analysis refreshed successfully');
             } else {
                 const errData = await response.json().catch(() => ({}));
                 toast.error(errData.detail || 'Failed to fetch analysis');
@@ -103,11 +106,28 @@ export default function AnalysisPage() {
                             AI-powered insights from your pitchbook
                         </p>
                     </div>
-                    <button className="btn-gradient px-6 py-3 rounded-lg flex items-center gap-2">
-                        <Download className="w-5 h-5" />
-                        Export Report
-                    </button>
+                    <div className="flex gap-4">
+                        <button 
+                            onClick={() => loadAnalysis(activeTab, true)}
+                            disabled={loading}
+                            className="btn-tertiary px-4 py-3 rounded-lg flex items-center gap-2 border border-[var(--border-color)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                        >
+                            <RefreshCcw className={clsx("w-5 h-5", loading && "animate-spin")} />
+                            Refresh Analysis
+                        </button>
+                        <button className="btn-gradient px-6 py-3 rounded-lg flex items-center gap-2">
+                            <Download className="w-5 h-5" />
+                            Export Report
+                        </button>
+                    </div>
                 </div>
+
+                {isCached[activeTab] && (
+                    <div className="mb-6 flex items-center gap-2 text-xs font-bold text-[var(--accent-secondary)] uppercase tracking-widest bg-[var(--accent-secondary)]/10 px-3 py-1 rounded-full w-fit">
+                        <Database className="w-3 h-3" />
+                        Cached Results
+                    </div>
+                )}
 
                 <div className="flex gap-2 mb-8 glass-card p-2 rounded-xl">
                     {tabs.map((tab) => {

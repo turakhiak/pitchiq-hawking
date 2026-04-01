@@ -17,6 +17,10 @@ router = APIRouter()
 VECTOR_DB_DIR = os.getenv("CHROMA_DB_PATH") or (
     "/mnt/data/chroma_db" if os.path.exists("/mnt/data") else "./chroma_db"
 )
+ANALYSIS_CACHE_DIR = os.getenv("ANALYSIS_CACHE_PATH") or (
+    "/mnt/data/analyses" if os.path.exists("/mnt/data") else "./analyses"
+)
+os.makedirs(ANALYSIS_CACHE_DIR, exist_ok=True)
 
 # Configure Gemini
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -25,6 +29,7 @@ model = genai.GenerativeModel('gemini-2.5-flash')
 class AnalysisRequest(BaseModel):
     document_id: str
     analysis_type: str  # company, market, financial, risk
+    force_rerun: Optional[bool] = False
 
 class Citation(BaseModel):
     text: str
@@ -73,14 +78,26 @@ class RiskAnalysis(BaseModel):
 async def analyze_document(request: AnalysisRequest):
     try:
         document_id = unquote(request.document_id)
-        
-        # Initialize Vector DB
+        cache_filename = f"{document_id.replace(' ', '_').replace('/', '_')}_{request.analysis_type}.json"
+        cache_path = os.path.join(ANALYSIS_CACHE_DIR, cache_filename)
+
+        # 1. Check Cache
+        if not request.force_rerun and os.path.exists(cache_path):
+            try:
+                with open(cache_path, 'r') as f:
+                    cached_data = json.load(f)
+                    print(f"DEBUG: Returning cached analysis for {document_id}")
+                    return {"analysis": cached_data, "cached": True}
+            except Exception as e:
+                print(f"DEBUG: Cache read failed: {e}")
+
+        # 2. Extract Context (Pass 1)
+        k_value = 10
         try:
             vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=get_embeddings())
-            # Search with filter
             results = vectordb.similarity_search(
-                query=f"Information about {request.analysis_type}",
-                k=10,
+                query=f"Detailed information about {request.analysis_type}",
+                k=k_value,
                 filter={"source": document_id}
             )
         except Exception as e:
@@ -88,10 +105,8 @@ async def analyze_document(request: AnalysisRequest):
             results = []
 
         context = "\n\n".join([doc.page_content for doc in results])
-        
         if not context:
-            # Fallback to general search if specific ID fails (maybe ID changed?)
-            results = vectordb.similarity_search(f"Information about {request.analysis_type}", k=10)
+            results = vectordb.similarity_search(f"Detailed information about {request.analysis_type}", k=10)
             context = "\n\n".join([doc.page_content for doc in results])
             
         if not context:
@@ -99,8 +114,6 @@ async def analyze_document(request: AnalysisRequest):
 
         # Shared prompt parts
         generation_config = {"response_mime_type": "application/json"}
-        
-        # Determine prompt based on type
         system_instruction = """
         You are 'PitchIQ', an elite Investment Analyst at a Tier-1 Venture Capital and Private Equity firm. 
         Your task is to analyze documents with extreme precision, identifying deep insights that a junior analyst might miss.
@@ -113,102 +126,71 @@ async def analyze_document(request: AnalysisRequest):
         5. Citations must include EXACT quotes and explain WHY that quote supports the data point.
         """
 
-        if request.analysis_type == "company":
-            schema = CompanyAnalysis
-            prompt = f"""
-            {system_instruction}
-            
-            TASK: Analyze the COMPANY OVERVIEW, MANAGEMENT TEAM, and PRODUCT PORTFOLIO.
-            CONTEXT: {context}
-            
-            SPECIFIC INSTRUCTIONS:
-            - 'overview': Summarize the core mission and value proposition.
-            - 'key_management': Extract names, roles, and 2-sentence bios highlighting relevant experience.
-            - 'products': Group into logical product lines. Describe what they solve.
-            - 'business_model': How do they make money? (B2B SaaS, Marketplace, etc.)
-            
-            Return ONLY valid JSON matching the CompanyAnalysis schema.
-            """
-        elif request.analysis_type == "market":
-            schema = MarketAnalysis
-            prompt = f"""
-            {system_instruction}
-            
-            TASK: Analyze MARKET SIZE (TAM/SAM/SOM), GROWTH (CAGR), and COMPETITION.
-            CONTEXT: {context}
-            
-            SPECIFIC INSTRUCTIONS:
-            - 'tam', 'sam', 'som': Extract specific dollar amounts. If unavailable, provide a calculated estimate based on the industry context.
-            - 'cagr': Find the industry growth rate.
-            - 'competitors': Identify 3-5 key competitors. List their relative strengths and weaknesses compared to this company.
-            - 'market_drivers': List macro/micro trends driving demand.
-            
-            Return ONLY valid JSON matching the MarketAnalysis schema.
-            """
-        elif request.analysis_type == "financial":
-            schema = FinancialAnalysis
-            prompt = f"""
-            {system_instruction}
-            
-            TASK: Extract FINANCIAL PERFORMANCE, METRICS, and VALUATION.
-            CONTEXT: {context}
-            
-            SPECIFIC INSTRUCTIONS:
-            - 'revenue_data': Extract yearly or quarterly revenue. Mark projected years as 'is_projected': true.
-            - 'valuation': Find the post-money or pre-money valuation referenced. 
-            - 'key_metrics': Extract metrics like LTV/CAC, ARR, Gross Margin, or burn rate.
-            - 'verification_notes': Add a paragraph explaining the reliability of this financial data (e.g., 'Audited', 'Management Estimates', 'Fragmentary').
-            
-            Return ONLY valid JSON matching the FinancialAnalysis schema.
-            """
-        elif request.analysis_type == "risk":
-            schema = RiskAnalysis
-            prompt = f"""
-            {system_instruction}
-            
-            TASK: Identify KEY RISKS and potential MITIGANTS.
-            CONTEXT: {context}
-            
-            SPECIFIC INSTRUCTIONS:
-            - Categorize risks into: Market Risk, Operational Risk, Financial Risk, or Regulatory Risk.
-            - For each risk, provide a plausible 'mitigant' (how the company manages this risk).
-            - 'overall_risk_score': Return 'Low', 'Medium', 'High', or 'Critical'.
-            
-            Return ONLY valid JSON matching the RiskAnalysis schema.
-            """
-        else:
-            raise HTTPException(status_code=400, detail="Invalid analysis type")
+        def perform_analysis(analysis_context, attempt_num=1):
+            if request.analysis_type == "company":
+                current_schema = CompanyAnalysis
+                prompt = f"{system_instruction}\n\nTASK: Analyze COMPANY OVERVIEW, TEAM, and PRODUCTS.\nCONTEXT: {analysis_context}\nReturn JSON matching CompanyAnalysis schema."
+            elif request.analysis_type == "market":
+                current_schema = MarketAnalysis
+                prompt = f"{system_instruction}\n\nTASK: Analyze MARKET SIZE (TAM/SAM/SOM), CAGR, and COMPETITION.\nCONTEXT: {analysis_context}\nReturn JSON matching MarketAnalysis schema."
+            elif request.analysis_type == "financial":
+                current_schema = FinancialAnalysis
+                prompt = f"{system_instruction}\n\nTASK: Extract FINANCIAL PERFORMANCE and VALUATION.\nCONTEXT: {analysis_context}\nReturn JSON matching FinancialAnalysis schema."
+            elif request.analysis_type == "risk":
+                current_schema = RiskAnalysis
+                prompt = f"{system_instruction}\n\nTASK: Identify KEY RISKS and MITIGANTS.\nCONTEXT: {analysis_context}\nReturn JSON matching RiskAnalysis schema."
+            else:
+                raise HTTPException(status_code=400, detail="Invalid analysis type")
 
-        # Call Gemini
-        try:
             response = model.generate_content(prompt, generation_config=generation_config)
             if not response.candidates:
-                 raise Exception("No AI candidates returned")
-                
+                raise Exception("No AI candidates returned")
+            
             json_text = response.text
-            # Final cleanup of markdown if any remains
             if "```json" in json_text:
                 json_text = json_text.split("```json")[1].split("```")[0].strip()
             elif "```" in json_text:
                 json_text = json_text.split("```")[1].split("```")[0].strip()
             
-            # Use Pydantic to validate and enforce the schema
             raw_data = json.loads(json_text)
-            
-            # Handle cases where AI might wrap the response in an "analysis" or "data" key
             if isinstance(raw_data, dict):
-                if "analysis" in raw_data:
-                    raw_data = raw_data["analysis"]
-                elif "data" in raw_data:
-                    raw_data = raw_data["data"]
+                if "analysis" in raw_data: raw_data = raw_data["analysis"]
+                elif "data" in raw_data: raw_data = raw_data["data"]
             
-            # If AI completely missed the reasoning field, provide a fallback
             if isinstance(raw_data, dict) and "reasoning" not in raw_data:
-                raw_data["reasoning"] = "Step-by-step logic missing from AI response."
+                raw_data["reasoning"] = f"Extraction Pass {attempt_num}"
                 
-            validated_data = schema.model_validate(raw_data)
-            
-            return {"analysis": validated_data.model_dump()}
+            return current_schema.model_validate(raw_data)
+
+        # 3. First Pass Analysis
+        validated_data = perform_analysis(context, 1)
+
+        # 4. AI Judge Logic (Self-Correction)
+        # We judge 'Quality' by checking if key fields are missing or 'N/A' 
+        # while the reasoning suggests information should be present.
+        low_quality = False
+        if request.analysis_type == "market" and validated_data.tam == "N/A": low_quality = True
+        if request.analysis_type == "company" and validated_data.overview == "No overview available.": low_quality = True
+        
+        if low_quality:
+            print(f"DEBUG: AI Judge detected low quality for {document_id}. Retrying with expanded context...")
+            # Retry with k=20 for a more holistic view
+            results_expanded = vectordb.similarity_search(
+                query=f"Detailed holistic view for {request.analysis_type} including all specific data points",
+                k=20,
+                filter={"source": document_id}
+            )
+            context_expanded = "\n\n".join([doc.page_content for doc in results_expanded])
+            validated_data = perform_analysis(context_expanded, 2)
+
+        # 5. Save to Cache
+        try:
+            with open(cache_path, 'w') as f:
+                json.dump(validated_data.model_dump(), f)
+        except Exception as e:
+            print(f"DEBUG: Cache write failed: {e}")
+
+        return {"analysis": validated_data.model_dump(), "cached": False}
         except Exception as e:
             print(f"AI ERROR: {e}")
             import traceback
