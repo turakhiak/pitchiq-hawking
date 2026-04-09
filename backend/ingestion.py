@@ -10,6 +10,8 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Background
 import google.generativeai as genai
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from shared_utils import get_embeddings
 from dotenv import load_dotenv
 
@@ -49,68 +51,35 @@ def _run_ingestion(job_id: str, tmp_path: str, filename: str, industry: str, geo
     """Background task: does the heavy lifting after the HTTP response is sent."""
     try:
         JOB_STORE[job_id]["status"] = "processing"
-        JOB_STORE[job_id]["step"] = "Uploading to Gemini..."
+        JOB_STORE[job_id]["step"] = "Parsing PDF..."
 
-        # Step 1: Upload to Gemini
-        uploaded_file = genai.upload_file(tmp_path, mime_type="application/pdf")
+        # Step 1: Load PDF deterministically
+        loader = PyPDFLoader(tmp_path)
+        pages = loader.load()
 
-        while uploaded_file.state.name == "PROCESSING":
-            time.sleep(1)
-            uploaded_file = genai.get_file(uploaded_file.name)
+        if not pages:
+            raise ValueError("Could not extract any text from the PDF file.")
 
-        if uploaded_file.state.name == "FAILED":
-            raise ValueError("Gemini failed to process the PDF file.")
+        JOB_STORE[job_id]["step"] = "Chunking text..."
 
-        JOB_STORE[job_id]["step"] = "Analysing with Gemini..."
-
-        # Step 2: Call Gemini to extract sections
-        prompt = """
-        Analyze this pitchbook and split it into logical sections.
+        # Step 2: Split text with overlap to preserve context
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1500,
+            chunk_overlap=300,
+            length_function=len,
+            is_separator_regex=False,
+        )
         
-        Return a JSON object with a "sections" key, containing a list of sections.
-        Each section should have:
-        - "title": The section title (e.g., "Executive Summary", "Financial Overview", "Risk Factors", "Market Analysis").
-        - "content": The full markdown content of that section (preserve all data, bullets, and tables).
-        - "page_range": The approximate page range (e.g., "1-2").
-        
-        Example JSON structure:
-        {
-          "sections": [
-            {
-              "title": "Executive Summary",
-              "content": "...",
-              "page_range": "1-2"
-            }
-          ]
-        }
-        """
+        documents = text_splitter.split_documents(pages)
 
-        generation_config = {"response_mime_type": "application/json"}
-        response = model.generate_content([prompt, uploaded_file], generation_config=generation_config)
-
-        try:
-            response_data = json.loads(response.text)
-            sections = response_data.get("sections", [])
-            if not sections:
-                sections = [{"title": "Full Document", "content": response.text, "page_range": "All"}]
-        except json.JSONDecodeError:
-            sections = [{"title": "Full Document", "content": response.text, "page_range": "All"}]
-
-        # Step 3: Create Document objects
-        documents = []
-        for section in sections:
-            doc = Document(
-                page_content=f"# {section.get('title', 'Section')}\n\n{section.get('content', '')}",
-                metadata={
-                    "source": filename,
-                    "page": section.get("page_range", "Unknown"),
-                    "industry": industry,
-                    "geography": geography,
-                    "deal_type": deal_type or "N/A",
-                    "section": section.get("title", "Unknown"),
-                },
-            )
-            documents.append(doc)
+        # Step 3: Enrich with Metadata
+        for doc in documents:
+            doc.metadata.update({
+                "source": filename,
+                "industry": industry,
+                "geography": geography,
+                "deal_type": deal_type or "N/A"
+            })
 
         JOB_STORE[job_id]["step"] = "Storing embeddings..."
 

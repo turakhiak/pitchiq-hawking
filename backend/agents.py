@@ -92,19 +92,42 @@ async def analyze_document(request: AnalysisRequest):
                 print(f"DEBUG: Cache read failed: {e}")
 
         # 2. Extract Context (Pass 1)
-        k_value = 10
         try:
             vectordb = Chroma(persist_directory=VECTOR_DB_DIR, embedding_function=get_embeddings())
-            results = vectordb.similarity_search(
-                query=f"Detailed information about {request.analysis_type}",
-                k=k_value,
-                filter={"source": document_id}
-            )
+            
+            # --- START QUERY EXPANSION ---
+            queries = []
+            if request.analysis_type == "company":
+                queries = ["company overview mission value proposition", "management team founders key personnel", "products services business model"]
+            elif request.analysis_type == "market":
+                queries = ["market size TAM SAM SOM", "market growth CAGR drivers trends", "competitors competitive landscape market share"]
+            elif request.analysis_type == "financial":
+                queries = ["financial performance revenue EBITDA margins", "valuation metrics LTV CAC burn rate", "projections runway cap table"]
+            elif request.analysis_type == "risk":
+                queries = ["key risks market operational risk", "regulatory financial risk", "mitigants risk management strategy"]
+            else:
+                queries = [f"Detailed information about {request.analysis_type}"]
+
+            all_results = []
+            seen_content = set()
+            
+            for q in queries:
+                results = vectordb.similarity_search(
+                    query=q,
+                    k=6, # Fetch 6 per sub-query, yielding up to 18 highly relevant chunks
+                    filter={"source": document_id}
+                )
+                for doc in results:
+                    if doc.page_content not in seen_content:
+                        seen_content.add(doc.page_content)
+                        all_results.append(doc)
+            # --- END QUERY EXPANSION ---
+            
         except Exception as e:
             print(f"DEBUG: Search failed: {e}")
-            results = []
+            all_results = []
 
-        context = "\n\n".join([doc.page_content for doc in results])
+        context = "\n\n".join([doc.page_content for doc in all_results])
         if not context:
             results = vectordb.similarity_search(f"Detailed information about {request.analysis_type}", k=10)
             context = "\n\n".join([doc.page_content for doc in results])
