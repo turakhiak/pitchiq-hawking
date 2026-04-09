@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 import os
 import json
@@ -56,6 +56,14 @@ class MarketAnalysis(BaseModel):
     market_drivers: List[str] = []
     citations: List[Citation] = []
 
+    @field_validator('tam', 'sam', 'som', 'cagr', mode='before')
+    @classmethod
+    def coerce_to_str(cls, v: any) -> str:
+        if isinstance(v, (int, float)): return str(v)
+        if isinstance(v, list) and len(v) > 0 and isinstance(v[0], dict) and 'value' in v[0]:
+            return str(v[0]['value'])
+        return v
+
 class FinancialAnalysis(BaseModel):
     reasoning: str
     revenue_data: List[dict] = []
@@ -67,6 +75,14 @@ class FinancialAnalysis(BaseModel):
     key_metrics: List[dict] = []
     verification_notes: str = "Verification in progress."
     citations: List[Citation] = []
+
+    @field_validator('ebitda_margins', 'valuation', 'monthly_burn_rate', 'runway_months', mode='before')
+    @classmethod
+    def coerce_to_str(cls, v: any) -> str:
+        if isinstance(v, (int, float)): return str(v)
+        if isinstance(v, list) and len(v) > 0 and isinstance(v[0], dict) and 'value' in v[0]:
+            return str(v[0]['value'])
+        return v
 
 class RiskAnalysis(BaseModel):
     reasoning: str
@@ -136,15 +152,17 @@ async def analyze_document(request: AnalysisRequest):
             raise HTTPException(status_code=404, detail="No document context found for analysis.")
 
         # Shared prompt parts
-        generation_config = {"response_mime_type": "application/json"}
+        generation_config = {"response_mime_type": "application/json", "temperature": 0.1}
         system_instruction = """
         You are 'PitchIQ', an elite Investment Analyst at a Tier-1 Venture Capital and Private Equity firm. 
         Your task is to analyze documents with extreme precision, identifying deep insights that a junior analyst might miss.
         
+        CRITICAL DIRECTIVE: If the specific answer or data point is NOT explicitly found in the provided CONTEXT, you MUST state "Data Unavailable" or "N/A". DO NOT hallucinate, deduce, or guess metrics from unrelated information.
+        
         GUIDELINES:
-        1. Always start your response by populating the 'reasoning' field with your step-by-step logical approach.
-        2. Be concise but data-driven. Use specific numbers, dates, and names found in the document.
-        3. If data is missing, don't hallucinate. Instead, use the 'reasoning' field to explain it's missing and provide a conservative estimate in the result fields while citing it as an AI-based estimate.
+        1. Always start your response by populating the 'reasoning' field. IN THE REASONING FIELD ONLY, you may perform step-by-step logic, estimates, or calculations. 
+        2. Be concise but data-driven. Use specific numbers, dates, and names strictly found in the document context.
+        3. If data is missing, explain why in the 'reasoning' field and populate the final result fields with "N/A" or "Data Unavailable".
         4. Focus on 'Quality over Quantity' for lists like products and management.
         5. Citations must include EXACT quotes and explain WHY that quote supports the data point.
         """
