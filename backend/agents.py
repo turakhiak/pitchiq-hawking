@@ -157,13 +157,31 @@ async def analyze_document(request: AnalysisRequest):
                 if "analysis" in raw_data: raw_data = raw_data["analysis"]
                 elif "data" in raw_data: raw_data = raw_data["data"]
             
-            # --- START SANITIZATION ---
-            # If AI returned a list or object for a field that should be a string, stringify it
+            # --- START ADVANCED SANITIZATION ---
             if isinstance(raw_data, dict):
-                for key, val in raw_data.items():
-                    if isinstance(val, (dict, list)) and key in ["tam", "sam", "som", "cagr", "valuation", "overview", "business_model"]:
-                        raw_data[key] = json.dumps(val)
-            # --- END SANITIZATION ---
+                # Normalize keys to lowercase for internal checks
+                keys = list(raw_data.keys())
+                for key in keys:
+                    val = raw_data[key]
+                    lower_key = key.lower()
+
+                    # 1. Stringify fields that MUST be strings
+                    if lower_key in ["tam", "sam", "som", "cagr", "valuation", "overview", "business_model", "founding_year", "headquarters", "overall_risk_score"]:
+                        if not isinstance(val, str):
+                            raw_data[key] = json.dumps(val) if isinstance(val, (dict, list)) else str(val)
+
+                    # 2. Heal Lists: If a list is expected but AI wrapped it in a single-key dict
+                    # Common with 'products', 'key_management', 'competitors', etc.
+                    if lower_key in ["products", "key_management", "founders_background", "competitors", "market_drivers", "revenue_data", "key_metrics", "unit_economics", "risks", "citations"]:
+                        if isinstance(val, dict) and len(val) == 1:
+                            # Extract the first list found inside the dict
+                            inner_val = next(iter(val.values()))
+                            if isinstance(inner_val, list):
+                                raw_data[key] = inner_val
+                        elif not isinstance(val, list):
+                            # Ensure it's at least an empty list to satisfy Pydantic
+                            raw_data[key] = []
+            # --- END ADVANCED SANITIZATION ---
             
             if isinstance(raw_data, dict) and "reasoning" not in raw_data:
                 raw_data["reasoning"] = f"Extraction Pass {attempt_num}"
