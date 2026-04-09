@@ -191,11 +191,6 @@ async def analyze_document(request: AnalysisRequest):
             print(f"DEBUG: Cache write failed: {e}")
 
         return {"analysis": validated_data.model_dump(), "cached": False}
-        except Exception as e:
-            print(f"AI ERROR: {e}")
-            import traceback
-            print(traceback.format_exc())
-            raise HTTPException(status_code=500, detail=f"AI Data Validation Failure: {str(e)}")
 
     except HTTPException as he:
         raise he
