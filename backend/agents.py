@@ -157,6 +157,14 @@ async def analyze_document(request: AnalysisRequest):
                 if "analysis" in raw_data: raw_data = raw_data["analysis"]
                 elif "data" in raw_data: raw_data = raw_data["data"]
             
+            # --- START SANITIZATION ---
+            # If AI returned a list or object for a field that should be a string, stringify it
+            if isinstance(raw_data, dict):
+                for key, val in raw_data.items():
+                    if isinstance(val, (dict, list)) and key in ["tam", "sam", "som", "cagr", "valuation", "overview", "business_model"]:
+                        raw_data[key] = json.dumps(val)
+            # --- END SANITIZATION ---
+            
             if isinstance(raw_data, dict) and "reasoning" not in raw_data:
                 raw_data["reasoning"] = f"Extraction Pass {attempt_num}"
                 
